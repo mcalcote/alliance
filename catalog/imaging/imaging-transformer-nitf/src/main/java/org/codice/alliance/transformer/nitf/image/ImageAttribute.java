@@ -208,9 +208,8 @@ public enum ImageAttribute implements NitfAttribute<ImageSegment> {
             "ILOC",
             segment -> segment.getImageLocationRow() + "," + segment.getImageLocationColumn()),
     IMAGE_MAGNIFICATION("imageMagnification",
-            "IMAG",
-            segment -> segment.getImageMagnification()
-                    .trim());
+            "IMAG", ImageSegment::getImageMagnificationAsDouble,
+            BasicTypes.DOUBLE_TYPE);
 
     public static final String ATTRIBUTE_NAME_PREFIX = "nitf.image.";
 
