@@ -14,7 +14,9 @@
 package org.codice.alliance.transformer.nitf.common;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,6 +33,7 @@ import ddf.catalog.data.AttributeDescriptor;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.impl.AttributeImpl;
 import ddf.catalog.data.impl.BasicTypes;
+import ddf.catalog.data.types.Validation;
 
 public class SegmentHandler {
 
@@ -97,13 +100,38 @@ public class SegmentHandler {
 
         for (AttributeDescriptor descriptor : descriptors) {
             if (value != null) {
-                Attribute catalogAttribute = populateAttribute(metacard,
-                        descriptor.getName(),
-                        value);
-                LOGGER.trace("Setting the metacard attribute [{}, {}]",
-                        descriptor.getName(),
-                        value);
-                metacard.setAttribute(catalogAttribute);
+                if (descriptor.getType()
+                        .getBinding()
+                        .equals(value.getClass())) {
+
+                    Attribute catalogAttribute = populateAttribute(metacard,
+                            descriptor.getName(),
+                            value);
+                    LOGGER.trace("Setting the metacard attribute [{}, {}]",
+                            descriptor.getName(),
+                            value);
+                    metacard.setAttribute(catalogAttribute);
+                } else {
+                    String validationWarning = String.format(
+                            "Unable to set the metacard attribute [{}, {}]. Attribute type does not match.",
+                            descriptor.getName(),
+                            value);
+                    LOGGER.debug(validationWarning);
+
+                    List<Serializable> warnings = new ArrayList<>();
+                    warnings.add(validationWarning);
+                    if (metacard.getAttribute(Validation.VALIDATION_WARNINGS) != null) {
+                        List<Serializable> values =
+                                metacard.getAttribute(Validation.VALIDATION_WARNINGS)
+                                        .getValues();
+                        if (values != null) {
+                            warnings.addAll(values);
+                        }
+                    }
+
+                    metacard.setAttribute(new AttributeImpl(Validation.VALIDATION_WARNINGS,
+                            Collections.unmodifiableList(warnings)));
+                }
             }
         }
     }
